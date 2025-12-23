@@ -1,0 +1,9 @@
+name: env
+dependencies:
+  - python=3.10
+  - scikit-learn
+  - pandas
+  - pip
+  - pip:
+    - mlflow
+    - dagshub
