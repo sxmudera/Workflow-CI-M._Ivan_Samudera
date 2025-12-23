@@ -1,51 +1,69 @@
-name: CI Pipeline
+name: CI Pipeline Advanced
 
 on: [push]
 
 jobs:
-  train-and-push:
+  mlops-workflow:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Set up job
+        uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Run actions/checkout@v3
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12.7
         uses: actions/setup-python@v4
         with:
           python-version: '3.12.7'
 
-      - name: Install Dependencies
-        run: |
-          pip install mlflow==2.19.0 dagshub pandas scikit-learn
+      - name: Check Env
+        run: python --version && pip --version
 
-      - name: Retrain Model (MLProject)
+      - name: Install dependencies
+        run: pip install mlflow==2.19.0 dagshub pandas scikit-learn joblib
+
+      - name: Run mlflow project
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USER }}
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
-          mlflow run MLProject --no-conda
+          cd MLProject
+          mlflow run . --no-conda
 
-      - name: Upload Artifact to GitHub
+      - name: Get latest MLflow run_id
+        run: |
+          RUN_ID=$(mlflow runs list --experiment-id 1 | head -n 3 | tail -n 1 | awk '{print $1}')
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+
+      - name: Install Python dependencies
+        run: pip install requests # Contoh depedensi tambahan jika diperlukan
+
+      - name: Upload to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: trained-model-artifacts
-          path: MLProject/
+          name: model-artifact
+          path: MLProject/model.pkl
 
-      - name: Build Docker Image
+      - name: Build Docker Model
         run: |
           echo "FROM python:3.12.7-slim" > Dockerfile
-          echo "RUN pip install pandas scikit-learn mlflow==2.19.0" >> Dockerfile
-          echo "COPY ./MLProject /app" >> Dockerfile
           echo "WORKDIR /app" >> Dockerfile
-          docker build -t heart-failure-model .
+          echo "COPY MLProject/model.pkl ." >> Dockerfile
+          docker build -t ${{ secrets.DOCKER_USER }}/heart-model:latest .
 
-      - name: Login Docker Hub
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
-      - name: Push to Docker Hub
-        run: |
-          docker tag heart-failure-model ${{ secrets.DOCKER_USER }}/heart-failure-model:latest
-          docker push ${{ secrets.DOCKER_USER }}/heart-failure-model:latest
+      - name: Tag Docker Image
+        run: docker tag ${{ secrets.DOCKER_USER }}/heart-model:latest ${{ secrets.DOCKER_USER }}/heart-model:latest
+
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKER_USER }}/heart-model:latest
+
+      - name: Complete job
+        run: echo "Workflow Advanced Selesai"
