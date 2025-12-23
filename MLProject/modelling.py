@@ -6,7 +6,7 @@ import joblib
 
 dagshub.init(repo_owner='sxmudera', repo_name='Heart-Failure-Project', mlflow=True)
 
-train = pd.read_csv('train_data.csv')
+train = pd.read_csv('/heart_failure_preprocessing/train_data.csv')
 X_train = train.drop('DEATH_EVENT', axis=1)
 y_train = train['DEATH_EVENT']
 
