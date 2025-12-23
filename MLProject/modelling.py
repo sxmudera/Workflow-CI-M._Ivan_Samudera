@@ -3,11 +3,6 @@ import mlflow
 import dagshub
 from sklearn.ensemble import RandomForestClassifier
 import joblib
-import os
-
-token = os.getenv("MLFLOW_TRACKING_PASSWORD")
-if token:
-    os.environ['DAGSHUB_USER_TOKEN'] = token
 
 dagshub.init(repo_owner='sxmudera', repo_name='Heart-Failure-Project', mlflow=True)
 
