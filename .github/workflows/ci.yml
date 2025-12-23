@@ -68,5 +68,5 @@ jobs:
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_USER }}/heart-model:latest
 
-      - name: Complete job
+      - name: Complete
         run: echo "Workflow Advanced Selesai"
